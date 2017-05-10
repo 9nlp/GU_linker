@@ -1,0 +1,3 @@
+AccB . accBC  accBC_mRNA  AccB  AccD-AccA-AccC-AccB ACETYL-COA-CARBOXYLTRANSFER-RXN acetyl-CoA  carbonate malonyl-CoA .
+AidB . aidB aidB_mRNA AidB .
+AlaS . alanine AlaS-alanine . alaS alaS_mRNA AlaS AlaS-alanine .

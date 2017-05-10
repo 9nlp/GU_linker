@@ -34,24 +34,23 @@ parser.add_argument("--inlines", help="A file containing  a sentence by row.", m
 parser.add_argument("--model", help="A file containing the sentence embeddings model (gensim).", metavar="model", default=None)
 parser.add_argument("--dims", help="Dimension of word embeddings.", metavar="dims", default='300', type=int)
 parser.add_argument("--top", help="number of sentences returned for each ranking.", metavar="top", default=10, type=int)
-parser.add_argument("--train", help="Toggles whether a new model must be trained (unspecified=False).", action='store_true', default=False)
-parser.add_argument("--save", help="Toggles whether results must be saved into automaticly named files (unspecified=False).", action='store_true', default=False)
+parser.add_argument("--train", help="Toggles whether a new model must be trained (unspecified=False).", metavar="train", default=False)
 args = parser.parse_args()
 
-train=args.train
+train=False
 train_file=args.corpus #"/almac/ignacio/data/GUsDany/corpus/GUs_literature.txt" 
 dims=args.dims
 top=args.top
 win=8
-arch=0 #"cbow" && "skipgram" = 1; "skipgram"=0
+arch=1 #"cbow" && "skipgram" = 1; "skipgram"=0
 model_file=args.model  #"/almac/ignacio/data/GUsDany/d2v_raw_GUs-literature-wiki_H%d_W%d_A%s.model" % (dims, win, arch)
 if args.indexes and not args.inlines:
     centers=[int(i)-1 for i in args.indexes.split(",")]
 elif not args.indexes and args.inlines:
     import string
     with open(args.inlines) as f:
-        sents=[s.strip().split()
-               #s.strip().translate(None, string.punctuation.translate(None, '-')).split() 
+      sents=[s.translate(None, 
+                        string.punctuation.translate(None, '-')).strip().split() 
                                                                 for s in f.readlines()]
 
 else:
@@ -60,9 +59,9 @@ else:
 if args.train:
     train_corpus = list(read_corpus(train_file))
 
-    model = d2v(size=dims, window=win, dbow_words=arch, min_count=1, iter=55)
+    model = d2v(size=dims, window=win, dbow_words=arch, min_count=1)
     model.build_vocab(train_corpus)
-    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.iter)
+    model.train(train_corpus, total_examples=model.corpus_count)
     model.save(model_file)
 
 m = d2v.load(model_file)
@@ -73,24 +72,15 @@ with open(train_file) as f0:
         for gu_idx in centers:
             gu_similarities=m.docvecs.most_similar(gu_idx, topn=top)
             line=GUs[gu_idx]
-            if args.save:
-                with open("rank_%s" % ''.join(line[0:15].strip().split()), "w") as f:
-                    f.write("# The most similars to this GU: \n# '%s'\n\n" % (line[0:80] if len(line) > 80 else line))
-                    for sim in gu_similarities:
-                        f.write("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))  
-            else:
-                print("# The most similars to this GU: \n# '%s'\n\n" % (line[0:80] if len(line) > 80 else line))
+            with open("rank_%s" % ''.join(line[0:15]).strip().split()), "w") as f:
+                f.write("# The most similars to this GU: \n# '%s'\n\n" % (line[0:80] if len(line) > 80 else line))
                 for sim in gu_similarities:
-                    print("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))
+                    f.write("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))  
     elif args.inlines:
             for gu in sents:
                 gu_similarities=m.docvecs.most_similar([m.infer_vector(gu)], topn=top)
-                if args.save:
-                    with open("rank_%s" % ''.join(gu)[0:15], "w") as f:
-                        f.write("# The most similars to this GU: \n# '%s'\n\n" % (" ".join(gu)[:80] if len(" ".join(gu)) > 80 else " ".join(gu)))
-                        for sim in gu_similarities:
-                            f.write("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))
-                else:
-                    print("# The most similars to this GU: \n# '%s'\n\n" % (" ".join(gu)[:80] if len(" ".join(gu)) > 80 else " ".join(gu)))
+                with open("rank_%s" % ''.join(gu[0:15].strip().split()), "w") as f:
+                    f.write("# The most similars to this GU: \n# '%s'\n\n" % (" ".join(gu[:80]) if len(" ".join(gu)) > 80 else " ".join(gu)))
                     for sim in gu_similarities:
-                        print("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))
+                        f.write("%d\t%.5f\t%s\n" % (sim[0], sim[1], GUs[sim[0]][0:80] if len(GUs[sim[0]]) > 80 else GUs[sim[0]]))
+
