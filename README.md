@@ -1,7 +1,7 @@
 # Requeridos 
 
 1. El corpus de entrenamiento y el modelo entrenado (son dos archivos grandes).
-2. Python3, skalearn, gensim
+2. Python, Skalearn, Gensim
 
 # Obtener los índices donde aparecen las GUs dentro del corpus de entrenamiento
 
