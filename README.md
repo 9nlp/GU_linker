@@ -1,9 +1,13 @@
-# Requeridos: El corpus de entrenamiento y el modelo entrenado (son dos archivos 
-# grandes).
-# Obtener los índices donde aparecen las GUs dentro del corpus de entrenamiento:
-# sea el corpus en "GUs_literature.txt" y sea una lista de TFs "AraC", "YdeO", 
-# "ArgP", "Ada", "AcrR" y "XylR":
+# Requeridos 
 
+1. El corpus de entrenamiento y el modelo entrenado (son dos archivos grandes).
+2. Python3, skalearn, gensim
+
+# Obtener los índices donde aparecen las GUs dentro del corpus de entrenamiento
+
+Sea el corpus en "GUs_literature.txt" y sea una lista de TFs "AraC", "YdeO", "ArgP", "Ada", "AcrR" y "XylR":
+
+```bash
 $ nl ../corpus/GUs_literature.txt | grep AraC | head -n1
      15  AraC . arabinose  AraC-arabinose . fucose AraC-fucose . araBAD  araBAD_mRNA AraB  RXN0-5116 ...
 $ nl /almac/ignacio/data/GUsDany/corpus/GUs_literature.txt | grep AcrR | head -n1
@@ -16,9 +20,10 @@ $ nl /almac/ignacio/data/GUsDany/corpus/GUs_literature.txt | grep XylR | head -n
    180  XylR . xylose XylR-xylose . xylAB xylAB_mRNA  XylA  XYLISOM-RXN xylopyranose  xylulose . xylAB ...
 $ nl /almac/ignacio/data/GUsDany/corpus/GUs_literature.txt | grep YdeO | head -n1
     57  EvgA . phosphate  EvgA-phosphate . acrD acrD_mRNA AcrD  AcrD-AcrA-TolC  TRANS-RXN-92  drug_Ext ...
+```
 
-# Give the indexes to the ranking script:
-
+# Give the indexes to the ranking script and run it:
+```bash
 $ python most_similars.py -h
 usage: most_similars.py [-h] [--indexes indexes] [--corpus corpus]
                         [--inlines inlines] [--model model] [--dims dims]
@@ -42,10 +47,13 @@ optional arguments:
                      named files (unspecified=False).
 
 $ python most_similars.py --corpus $DATA/GUsDany/corpus/GUs_literature.txt --indexes 15,5,6,16,180,57 --model $DATA/GUsDany/d2v_raw_GUs-literature-wiki_H300_W5_A1.model
+```
 
-# This prints to stdout the ranking:
-# index|similaity|GU
+This prints out to stdout the ranking:
 
+index|similaity|GU
+
+````bash
 # The most similars to this GU: 
 # 'AraC . arabinose AraC-arabinose . fucose AraC-fucose . araBAD  araBAD_mRNA AraB  R'
 
@@ -191,3 +199,6 @@ $ python most_similars.py --corpus $DATA/GUsDany/corpus/GUs_literature.txt --ind
 47  0.75532 DhaR . DhaK DhaR-DhaK . dhaKLM  dhaKLM_mRNA DhaK  DhaR-DhaK . dhaKLM  dhaKLM_mRNA D
 
 80  0.74344 HcaR . hcaEFCBD hcaEFCBD_mRNA HcaE  HcaC-HcaD-HcaF-HcaE RXN-12072 cinnamate oxyge
+```
+
+Happy linking
