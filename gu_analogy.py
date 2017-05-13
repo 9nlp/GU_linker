@@ -1,13 +1,39 @@
 import multiprocessing
 from argparse import ArgumentParser as ap
-#from ast import literal_eval as le
-from gensim.models.keyedvectors import KeyedVectors
-#from gensim.models import Word2Vec
+from gensim.models.keyedvectors import KeyedVectors as kv
+#from gensim.models import Word2Vec as kv
 import logging
-#load_vectors=vDB.load_word2vec_format
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-n_cpus = 20
+#n_cpus = 20
+class corpus_streamer(object):
+    """ This Object streams the input raw text file row by row. The constructor
+    allows for streaming a dictionary (object), strings (True), lists (by space
+    or any character) and sublists of strings (position='a:b') or a substring
+    from the list in a specific position (position=index).
+    """
+    def __init__(self, file_name, dictionary=None, strings=None,
+                                                    spliter="", position=":"):
+        self.file_name=file_name
+        self.dictionary=dictionary
+        self.strings=strings
+        self.spliter=spliter
+        self.position=position
+    def __iter__(self):
+        for line in open(self.file_name):
+        # assume there's one document per line, tokens separated by whitespace
+            if self.dictionary and not self.strings:
+                yield self.dictionary.doc2bow(line.lower().split())
+            elif not self.dictionary and self.strings:
+                if self.spliter=="":
+                    yield line.strip()
+                elif self.position==":" and self.spliter!="":
+                    yield line.strip().split(self.spliter)
+                elif not isinstance(self.position, int) and len(self.position)>1:
+                    i,f=map(int, self.position.split(":"))
+                    yield line.strip().split(self.spliter)[i:f]
+                elif isinstance(self.position, int):
+                    yield line.strip().split(self.spliter)[self.position]
 
 def yield_results(filename):
     with open(filename) as f:
@@ -36,10 +62,12 @@ def check_analogy(analogy):
         return analogy + " error"
 
 def mp_handler(inlines=None, outfile = 'answers.txt'):
-    p = multiprocessing.Pool(n_cpus)
-
-    with open(inlines) as f:
-        analogies = [line for line in (l.strip() for l in f) if not line.startswith(": ")]
+    global thr
+    p = multiprocessing.Pool(thr)
+    analogies=corpus_streamer(inlines, strings=True)
+    #with open(inlines) as f:
+        #analogies = [line for line in (l.strip() for l in f) if not line.startswith(": ")]
+        #analogies=(l.strip() for l in f)
     with open(outfile, 'w') as f:
         for result in p.imap(check_analogy, analogies):
             f.write('%s\n' % result.encode('utf-8'))
@@ -58,7 +86,7 @@ if __name__=='__main__':
 
     print('\nLoading embeddings... pleace take a coffe...\n')
 
-    we_model=KeyedVectors.load_word2vec_format(args.model, 
+    we_model=kv.load_word2vec_format(args.model, 
                                          binary=False, 
                                          encoding='latin-1')
 
