@@ -21,8 +21,11 @@ def check_analogy(analogy):
                                     negative=[words_analogy[2]], 
                                     topn=thr)
     except:
-        return analogy + " error"
-#   print words_analogy[0:2]; print words_analogy[2]; print words_analogy[3]; print [r[0] for r in Rs]
+    # Return an erroneous analogy if some word is not in the 
+    # vocabulary (this could be avoided by inferring word vector 
+    # for fastext).
+        return analogy + " error" 
+
     if words_analogy[3] in [r[0] for r in Rs]:
         return analogy + " correct"
     else:
@@ -35,7 +38,6 @@ def mp_handler(inlines=None, outfile = 'answers.txt'):
         analogies = [line for line in (l.strip() for l in f) if not line.startswith(": ")]
     with open(outfile, 'w') as f:
         for result in p.imap(check_analogy, analogies):
-                # (filename, count) tuples from worker
             f.write('%s\n' % result.encode('utf-8'))
     
 if __name__=='__main__':
@@ -43,15 +45,14 @@ if __name__=='__main__':
     parser = ap(description='This script computes the word analogy accuracy tests for word emebddings in an efficient way.')
     parser.add_argument("--inlines", help="A file containing lines to clean be evaluated (word analogies).", metavar="inlines",default=None)
     parser.add_argument("--model", help="A file containing the word embeddings in text format (vec).", metavar="model", required=True)
-    parser.add_argument("--thr", help="The max number of answers of the model allowed to compare correct answer.", metavar="thr",type=int)
-    parser.add_argument("--outfile", help="A file where computed accuracies must be saved.", metavar="outfile", default="accuracies")
+    parser.add_argument("--thr", help="The max number of answers given by the model to consider a correct answer.", metavar="thr",type=int)
+    parser.add_argument("--outfile", help="A file where computed accuracies and analogies must be saved.", metavar="outfile", default="accuracies")
     args = parser.parse_args()
 
     global thr
     thr=args.thr
 
-    print('\nLoading embeddings... pleace take a coffe...')
-    #word_vectors = load_vectors(args.vectors, binary=False, encoding='latin-1')
+    print('\nLoading embeddings... pleace take a coffe...\n')
 
     we_model=KeyedVectors.load_word2vec_format(args.model, 
                                          binary=False, 
@@ -66,6 +67,5 @@ if __name__=='__main__':
             corr+=1
         elif r=="error":
             eror+=1
-#    import pdb
-#    pdb.set_trace()
-    print('Accuracy for given word embeddings: %f ' % (float(corr)/float(corr+eror)))
+
+    print('\nAccuracy for given word embeddings: %f ' % (float(corr)/float(corr+eror)))
