@@ -15,6 +15,10 @@ def yield_results(filename):
             yield line.strip().split()[4]
 
 def check_analogy(analogy):
+    # Verify the presence of a header
+    if analogy.startswith(": "):
+        return analogy
+
     words_analogy=analogy.split()
     try:
         Rs=we_model.most_similar_cosmul(positive=words_analogy[0:2], 
@@ -62,10 +66,20 @@ if __name__=='__main__':
     
     corr=0
     eror=0
+    c=0;x=""
     for r in yield_results(args.outfile):
         if r=="correct":
             corr+=1
+            c+=1
         elif r=="error":
             eror+=1
+            c+=1
+        elif r.startswith(": "):
+            
+            if c:
+            
+                print (x)
+                print('\nAccuracy for given word embeddings: %f  %% (%d / %d)' % (float(corr)/float(corr+eror), corr, eror))
+            else: x=r
 
-    print('\nAccuracy for given word embeddings: %f ' % (float(corr)/float(corr+eror)))
+    print('\nAccuracy for given word embeddings: %f  %% (%d / %d)' % (float(corr)/float(corr+eror), corr, eror))
