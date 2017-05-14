@@ -27,25 +27,38 @@ class corpus_streamer(object):
                 elif self.position==":":
                     yield line.strip().split(self.spliter)
 
+def yield_results(filename):
+    with open(filename) as f:
+        for line in f:
+            if line.startswith(": "):
+                yield line.strip()
+            else:
+                yield line.strip().split()[4]
+
 def do_work(analogy):
+    global out_file
     if analogy.startswith(": "):
-        return analogy
+        out_file.write("%s\n"%analogy)
+        return
 
     words_analogy=analogy.split()
     try:
         Rs=we_model.most_similar_cosmul(positive=words_analogy[0:2],
                                 negative=[words_analogy[2]],
                                 topn=threshold)
-        except:
+    except:
 # Return an erroneous analogy if some word is not in the
 # vocabulary (this could be avoided by inferring word vector
 # for fastext).
-            return analogy + " error"
+        out_file.write(analogy + " error\n")
+        return
 
     if words_analogy[3] in [r[0] for r in Rs]:
-        return analogy + " correct"
+        out_file.write(analogy +  " correct\n")
     else:
-        return analogy + " error"
+        out_file.write(analogy + " error\n")
+
+    return
 
 def worker():
     while True:
@@ -56,7 +69,7 @@ def worker():
         q.task_done()
 
 if __name__=='__main__':
-
+    from argparse import ArgumentParser as ap
     parser = ap(description='This script computes the word analogy accuracy tests for word emebddings in an efficient way.')
     parser.add_argument("--inlines", help="A file containing lines to clean be evaluated (word analogies).", metavar="inlines",default=None)
     parser.add_argument("--model", help="A file containing the word embeddings in text format (vec).", metavar="model", required=True)
@@ -67,6 +80,7 @@ if __name__=='__main__':
     global threshold
     threshold=args.threshold
     nb_threads=args.threads
+    global out_file
 
     print('\nLoading embeddings... pleace take a coffe...\n')
 
@@ -76,11 +90,14 @@ if __name__=='__main__':
                                          encoding='latin-1')
     q = queue.Queue()
     threads = []
-    for i in range(thr):
+    for i in range(nb_threads):
         t = threading.Thread(target=worker)
         t.start()
         threads.append(t)
 
+    #with open(args.outfile, "w") as out_file:
+    out_file=open(args.outfile, "w")
+    #out_file=f
     for a in word_analogies:
         q.put(a)
 
@@ -91,3 +108,33 @@ if __name__=='__main__':
         q.put(None)
     for t in threads:
         t.join()
+
+    out_file.close()
+
+    results={}
+    for r in yield_results(args.outfile):
+        if r.startswith(": "):
+            section=r[2:]
+            results[section]=[0, 0]
+        else:
+            if r=="correct":
+                results[section][0]+=1
+            elif r=="error":
+                results[section][1]+=1
+
+    print("\n")
+    all_errors=[]
+    all_correc=[]
+    for section in results:
+          corr=results[section][0]
+          all_correc.append(corr)
+          eror=results[section][1]
+          all_errors.append(eror)
+          print("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s" % 
+                      (eror, corr, float(corr)/float(corr+eror), section))
+
+    eror=sum(all_errors)
+    corr=sum(all_correc)
+
+    print("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
+                      (eror, corr, float(corr)/float(corr+eror)))
