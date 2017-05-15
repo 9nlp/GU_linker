@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import threading
 import Queue
 import sys
@@ -35,7 +37,47 @@ def yield_results(filename):
             elif line.startswith("# "):
                 continue
             else:
-                yield line.strip().split()[4]
+                try:
+                    yield line.strip().split()[4]
+                except:
+                    continue
+
+def compute_results(results_file, append=False):
+    results={}
+    for r in yield_results(results_file):
+        if r.startswith(": "):
+            section=r[2:]
+            results[section]=[0, 0]
+        elif r.startswith("# "):
+            continue
+        else:
+            if r=="correct":
+                results[section][0]+=1
+            elif r=="error":
+                results[section][1]+=1
+
+    if append:
+        f=open(args.outfile, "a")
+        print_r=f.write
+    else:
+        print_r=print
+
+    print_r("\n")
+    all_errors=[]
+    all_correc=[]
+    for section in results:
+        corr=results[section][0]
+        all_correc.append(corr)
+        eror=results[section][1]
+        all_errors.append(eror)
+        print_r("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
+                          (eror, corr, float(corr)/float(corr+eror), section))
+
+    eror=sum(all_errors)
+    corr=sum(all_correc)
+
+    print_r("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
+                          (eror, corr, float(corr)/float(corr+eror)))
 
 def do_work(analogy):
     global out_file
@@ -115,33 +157,4 @@ if __name__=='__main__':
         t.join()
 
     out_file.close()
-    results={}
-    for r in yield_results(args.outfile):
-        if r.startswith(": "):
-            section=r[2:]
-            results[section]=[0, 0]
-        elif r.startswith("# "):
-            continue
-        else:
-            if r=="correct":
-                results[section][0]+=1
-            elif r=="error":
-                results[section][1]+=1
-
-    with open(args.outfile, "a") as f:
-        f.write("\n")
-        all_errors=[]
-        all_correc=[]
-        for section in results:
-            corr=results[section][0]
-            all_correc.append(corr)
-            eror=results[section][1]
-            all_errors.append(eror)
-            f.write("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
-                      (eror, corr, float(corr)/float(corr+eror), section))
-
-        eror=sum(all_errors)
-        corr=sum(all_correc)
-
-        f.write("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
-                      (eror, corr, float(corr)/float(corr+eror)))
+    
