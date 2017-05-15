@@ -158,3 +158,4 @@ if __name__=='__main__':
 
     out_file.close()
     
+    compute_results(args.outfile, append=True)
