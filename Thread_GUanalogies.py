@@ -32,6 +32,8 @@ def yield_results(filename):
         for line in f:
             if line.startswith(": "):
                 yield line.strip()
+            elif line.startswith("# "):
+                continue
             else:
                 yield line.strip().split()[4]
 
@@ -39,6 +41,8 @@ def do_work(analogy):
     global out_file
     if analogy.startswith(": "):
         out_file.write("%s\n"%analogy)
+        return
+    elif analogy.startswith("# "):
         return
 
     words_analogy=analogy.split()
@@ -71,11 +75,11 @@ def worker():
 if __name__=='__main__':
     from argparse import ArgumentParser as ap
     parser = ap(description='This script computes the word analogy accuracy tests for word emebddings in an efficient way.')
-    parser.add_argument("--inlines", help="A file containing lines to clean be evaluated (word analogies).", metavar="inlines",default=None)
+    parser.add_argument("--inlines", help="A file containing lines to clean be evaluated (word analogies).", metavar="inlines", required=True)
     parser.add_argument("--model", help="A file containing the word embeddings in text format (vec).", metavar="model", required=True)
-    parser.add_argument("--threshold", help="The max number of answers given by the model to consider a correct answer.", metavar="threshold",type=int)
-    parser.add_argument("--threads", help="Number of processing threads.", metavar="threads",type=int)
-    parser.add_argument("--outfile", help="A file where computed accuracies and analogies must be saved.", metavar="outfile", default="accuracies")
+    parser.add_argument("--threshold", help="The max number of answers given by the model to consider a correct answer (defualt=15).", metavar="threshold",type=int, default=15)
+    parser.add_argument("--threads", help="Number of processing threads (default=5, more than this can lead to memory overload.).", metavar="threads",type=int, default=5)
+    parser.add_argument("--outfile", help="A file where computed accuracies and analogies must be saved.", metavar="outfile", default="accuracies", required=True)
     args = parser.parse_args()
     global threshold
     threshold=args.threshold
@@ -95,46 +99,49 @@ if __name__=='__main__':
         t.start()
         threads.append(t)
 
-    #with open(args.outfile, "w") as out_file:
     out_file=open(args.outfile, "w")
-    #out_file=f
+    out_file.write("# Model: %s\n" % args.model)
+    out_file.write("# Tolerance: %d\n"% args.threshold)
+  
     for a in word_analogies:
         q.put(a)
 
-# block until all tasks are done
+    # block until all tasks are done
     q.join()
-# stop workers
+    # stop workers
     for i in range(nb_threads):
         q.put(None)
     for t in threads:
         t.join()
 
     out_file.close()
-
     results={}
     for r in yield_results(args.outfile):
         if r.startswith(": "):
             section=r[2:]
             results[section]=[0, 0]
+        elif r.startswith("# "):
+            continue
         else:
             if r=="correct":
                 results[section][0]+=1
             elif r=="error":
                 results[section][1]+=1
 
-    print("\n")
-    all_errors=[]
-    all_correc=[]
-    for section in results:
-          corr=results[section][0]
-          all_correc.append(corr)
-          eror=results[section][1]
-          all_errors.append(eror)
-          print("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s" % 
+    with open(args.outfile, "a") as f:
+        f.write("\n")
+        all_errors=[]
+        all_correc=[]
+        for section in results:
+            corr=results[section][0]
+            all_correc.append(corr)
+            eror=results[section][1]
+            all_errors.append(eror)
+            f.write("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
                       (eror, corr, float(corr)/float(corr+eror), section))
 
-    eror=sum(all_errors)
-    corr=sum(all_correc)
+        eror=sum(all_errors)
+        corr=sum(all_correc)
 
-    print("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
+        f.write("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
                       (eror, corr, float(corr)/float(corr+eror)))
