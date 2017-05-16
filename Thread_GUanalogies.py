@@ -76,14 +76,14 @@ def compute_results(results_file, append=False):
         miss=results[section][2]
         all_missin.append(miss)
         print_r("Errors: %d\tCorrects: %d\tMissing: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
-                          (eror, corr, miss, float(corr)/float(corr+eror), section))
+                          (eror, corr, miss, corr*100.0/float(corr+eror), section))
 
     eror=sum(all_errors)
     corr=sum(all_correc)
     miss=sum(all_missin)
 
     print_r("\nTotal errors: %d\t Total corrects: %d\tMissing: %d\tTotal precision: %.4f %%\n" %
-                          (eror, corr, miss, float(corr)/float(corr+eror)))
+                          (eror, corr, miss, corr*100.0/float(corr+eror)))
 
 def do_work(analogy):
     global out_file
