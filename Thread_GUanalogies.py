@@ -47,7 +47,7 @@ def compute_results(results_file, append=False):
     for r in yield_results(results_file):
         if r.startswith(": "):
             section=r[2:]
-            results[section]=[0, 0]
+            results[section]=[0, 0, 0]
         elif r.startswith("# "):
             continue
         else:
@@ -55,6 +55,8 @@ def compute_results(results_file, append=False):
                 results[section][0]+=1
             elif r=="error":
                 results[section][1]+=1
+            elif r=="missing":
+                results[section][2]+=1
 
     if append:
         f=open(args.outfile, "a")
@@ -65,19 +67,23 @@ def compute_results(results_file, append=False):
     print_r("\n")
     all_errors=[]
     all_correc=[]
+    all_missin=[]
     for section in results:
         corr=results[section][0]
         all_correc.append(corr)
         eror=results[section][1]
         all_errors.append(eror)
-        print_r("Errors: %d\t Corrects: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
-                          (eror, corr, float(corr)/float(corr+eror), section))
+        miss=results[section][2]
+        all_missin.append(miss)
+        print_r("Errors: %d\tCorrects: %d\tMissing: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
+                          (eror, corr, miss, float(corr)/float(corr+eror), section))
 
     eror=sum(all_errors)
     corr=sum(all_correc)
+    miss=sum(all_missin)
 
-    print_r("\nTotal errors: %d\t Total corrects: %d\tTotal precision: %.4f %%\n" %
-                          (eror, corr, float(corr)/float(corr+eror)))
+    print_r("\nTotal errors: %d\t Total corrects: %d\tMissing: %d\tTotal precision: %.4f %%\n" %
+                          (eror, corr, miss, float(corr)/float(corr+eror)))
 
 def do_work(analogy):
     global out_file
@@ -96,13 +102,13 @@ def do_work(analogy):
 # Return an erroneous analogy if some word is not in the
 # vocabulary (this could be avoided by inferring word vector
 # for fastext).
-        out_file.write(analogy + " error\n")
+        out_file.write(analogy + " error missing\n" % )
         return
-
-    if words_analogy[3] in [r[0] for r in Rs]:
-        out_file.write(analogy +  " correct\n")
+    ans=[r[0] for r in Rs]
+    if words_analogy[3] in ans:
+        out_file.write(analogy +  " correct %s\n" % ans)
     else:
-        out_file.write(analogy + " error\n")
+        out_file.write(analogy + " missing %s\n" % ans)
 
     return
 
