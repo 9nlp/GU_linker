@@ -102,7 +102,7 @@ def do_work(analogy):
 # Return an erroneous analogy if some word is not in the
 # vocabulary (this could be avoided by inferring word vector
 # for fastext).
-        out_file.write(analogy + " error missing\n" % )
+        out_file.write(analogy + " error missing OOV_word\n" )
         return
     ans=[r[0] for r in Rs]
     if words_analogy[3] in ans:
