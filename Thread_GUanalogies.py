@@ -47,15 +47,15 @@ def compute_results(results_file, append=False):
     for r in yield_results(results_file):
         if r.startswith(": "):
             section=r[2:]
-            results[section]=[0, 0, 0]
+            results[section]=[0, 0, 0]#, 0]
         elif r.startswith("# "):
             continue
         else:
-            if r=="correct":
+            if r=="found":
                 results[section][0]+=1
-            elif r=="error":
+            elif r=="absent":
                 results[section][1]+=1
-            elif r=="missing":
+            elif r=="OOV":
                 results[section][2]+=1
 
     if append:
@@ -65,25 +65,28 @@ def compute_results(results_file, append=False):
         print_r=print
 
     print_r("\n")
-    all_errors=[]
-    all_correc=[]
-    all_missin=[]
+    all_absent=[]
+    all_found=[]
+    all_oov=[]
+    print_r("Section\tFound\tAbsent\tOOV\tPrecision (%)\n") 
     for section in results:
-        corr=results[section][0]
-        all_correc.append(corr)
-        eror=results[section][1]
-        all_errors.append(eror)
-        miss=results[section][2]
-        all_missin.append(miss)
-        print_r("Errors: %d\tCorrects: %d\tMissing: %d\tPrecision: %.4f %%\tSection: %s'\n" % 
-                          (eror, corr, miss, corr*100.0/float(corr+eror), section))
+        found=results[section][0]
+        all_found.append(found)
+        absent=results[section][1]
+        all_absent.append(absent)
+        oov=results[section][2]
+        all_oov.append(oov)
+        print_r("%s\t%d\t%d\t%d\t%.4f\n" % 
+                          (section, found, absent, oov,  
+                            found*100.0/float(found+absent+oov)))
 
-    eror=sum(all_errors)
-    corr=sum(all_correc)
-    miss=sum(all_missin)
+    absent=sum(all_absent)
+    found=sum(all_found)
+    oov=sum(all_oov)
 
-    print_r("\nTotal errors: %d\t Total corrects: %d\tMissing: %d\tTotal precision: %.4f %%\n" %
-                          (eror, corr, miss, corr*100.0/float(corr+eror)))
+    print_r("Total\t%d\t%d\t%d\t%.4f\n" %
+                          (found, absent, oov, 
+                              found*100.0/float(found+absent+oov)))
 
 def do_work(analogy):
     global out_file
@@ -102,13 +105,13 @@ def do_work(analogy):
 # Return an erroneous analogy if some word is not in the
 # vocabulary (this could be avoided by inferring word vector
 # for fastext).
-        out_file.write(analogy + " error missing OOV_word\n" )
+        out_file.write(analogy + " OOV word\n" )
         return
     ans=[r[0] for r in Rs]
     if words_analogy[3] in ans:
-        out_file.write(analogy +  " correct %s\n" % ans)
+        out_file.write(analogy +  " found %s\n" % ans)
     else:
-        out_file.write(analogy + " missing %s\n" % ans)
+        out_file.write(analogy + " absent %s\n" % ans)
 
     return
 
